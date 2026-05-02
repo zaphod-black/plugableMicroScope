@@ -58,21 +58,25 @@ local function ass_button(x, y, w, h, label, fill_color)
     return bg .. '\n' .. txt
 end
 
-local function ass_rec(osd_w)
-    local pulse = (math.floor(mp.get_time() * 2) % 2 == 0)
-    local dot   = pulse and '● ' or '   '
+local function rec_visible()
+    -- 1 second on, 2 seconds off (3-second cycle)
+    return (mp.get_time() % 3) < 1
+end
+
+local function ass_rec()
+    if not rec_visible() then return '' end
     return string.format(
-        '{\\r}{\\an9\\pos(%d,%d)\\fs28\\bord3\\1c&HFFFFFF&\\3c&H0000CC&\\b1}%sREC',
-        osd_w - 24, 24, dot
+        '{\\r}{\\an7\\pos(%d,%d)\\fs28\\bord3\\1c&HFFFFFF&\\3c&H0000CC&\\b1}%s REC',
+        24, 24, '●'
     )
 end
 
 local function redraw()
-    local osd_w = mp.get_property_number('osd-width') or 1280
     local x, y, w, h = btn_rect()
     local data = ass_button(x, y, w, h, '[ SNAP ]')
     if recording then
-        data = data .. '\n' .. ass_rec(osd_w)
+        local rec = ass_rec()
+        if rec ~= '' then data = data .. '\n' .. rec end
     end
     overlay.data = data
     overlay:update()
@@ -126,7 +130,7 @@ end)
 
 mp.observe_property('osd-width',  'number', redraw)
 mp.observe_property('osd-height', 'number', redraw)
-mp.add_periodic_timer(0.5, function() if recording then redraw() end end)
+mp.add_periodic_timer(0.2, function() if recording then redraw() end end)
 
 mp.register_event('file-loaded', redraw)
 redraw()
