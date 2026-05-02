@@ -55,8 +55,12 @@ install_linux() {
     install_launcher "$BIN_DIR/plugable-microscope"
 
     log "Installing desktop entry"
-    install -m 0644 "$SCRIPT_DIR/share/applications/plugable-microscope.desktop" \
-        "$APP_DIR/plugable-microscope.desktop"
+    # Use absolute path for Exec= so graphical launchers that don't inherit
+    # ~/.local/bin in PATH (walker, Omarchy, etc.) can still find the launcher.
+    sed "s|^Exec=plugable-microscope$|Exec=$BIN_DIR/plugable-microscope|" \
+        "$SCRIPT_DIR/share/applications/plugable-microscope.desktop" \
+        > "$APP_DIR/plugable-microscope.desktop"
+    chmod 0644 "$APP_DIR/plugable-microscope.desktop"
 
     if command -v update-desktop-database >/dev/null 2>&1; then
         update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
