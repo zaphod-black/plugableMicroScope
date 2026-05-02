@@ -9,21 +9,30 @@ log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 err() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; }
 
 install_linux_deps() {
+    local need=()
+    command -v mpv       >/dev/null 2>&1 || need+=(mpv)
+    command -v ffmpeg    >/dev/null 2>&1 || need+=(ffmpeg)
+    command -v v4l2-ctl  >/dev/null 2>&1 || need+=(v4l-utils)
+    if [ ${#need[@]} -eq 0 ]; then
+        log "All dependencies already present — skipping package install."
+        return
+    fi
+
     if command -v pacman >/dev/null 2>&1; then
-        log "Installing via pacman: mpv ffmpeg v4l-utils"
-        sudo pacman -S --needed --noconfirm mpv ffmpeg v4l-utils
+        log "Installing via pacman: ${need[*]}"
+        sudo pacman -S --needed --noconfirm "${need[@]}"
     elif command -v apt-get >/dev/null 2>&1; then
-        log "Installing via apt: mpv ffmpeg v4l-utils"
+        log "Installing via apt: ${need[*]}"
         sudo apt-get update
-        sudo apt-get install -y mpv ffmpeg v4l-utils
+        sudo apt-get install -y "${need[@]}"
     elif command -v dnf >/dev/null 2>&1; then
-        log "Installing via dnf: mpv ffmpeg v4l-utils"
-        sudo dnf install -y mpv ffmpeg v4l-utils
+        log "Installing via dnf: ${need[*]}"
+        sudo dnf install -y "${need[@]}"
     elif command -v zypper >/dev/null 2>&1; then
-        log "Installing via zypper: mpv ffmpeg v4l-utils"
-        sudo zypper install -y mpv ffmpeg v4l-utils
+        log "Installing via zypper: ${need[*]}"
+        sudo zypper install -y "${need[@]}"
     else
-        err "No supported package manager found (pacman/apt/dnf/zypper). Install mpv, ffmpeg, and v4l-utils manually, then re-run."
+        err "No supported package manager found (pacman/apt/dnf/zypper). Install ${need[*]} manually, then re-run."
         exit 1
     fi
 }
@@ -37,10 +46,16 @@ install_mac_deps() {
     brew install mpv ffmpeg
 }
 
-# Substitute __PMS_REPO_ROOT__ in the launcher template, install to dest, chmod +x.
+# Inject an `export PMS_REPO_ROOT=...` line right after the shebang so the
+# installed launcher always knows where to find the Lua + Captures dir,
+# regardless of cwd or how it was invoked.
 install_launcher() {
     local dest="$1"
-    sed "s|__PMS_REPO_ROOT__|$SCRIPT_DIR|g" "$SCRIPT_DIR/bin/plugable-microscope" > "$dest"
+    {
+        head -n 1 "$SCRIPT_DIR/bin/plugable-microscope"
+        printf 'export PMS_REPO_ROOT=%q\n' "$SCRIPT_DIR"
+        tail -n +2 "$SCRIPT_DIR/bin/plugable-microscope"
+    } > "$dest"
     chmod 0755 "$dest"
 }
 

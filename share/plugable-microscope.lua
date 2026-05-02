@@ -22,7 +22,6 @@ mkdir(PICS); mkdir(VIDS)
 
 mp.set_property('osc', 'no')
 mp.set_property('screenshot-directory', PICS)
-mp.set_property('screenshot-template', 'microscope-%tY%tm%td-%tH%tM%tS')
 mp.set_property('screenshot-format', 'png')
 
 local recording = false
@@ -79,28 +78,35 @@ local function redraw()
     overlay:update()
 end
 
+local function notify(msg, secs)
+    -- Two-line OSD popup: bold first line, smaller path on the second.
+    -- Disappears after `secs` seconds.
+    mp.osd_message(msg, secs or 3)
+end
+
 local function snap()
-    mp.command('screenshot')
-    mp.osd_message('snap saved', 1)
+    local path = string.format('%s/microscope-%s.png', PICS, ts())
+    mp.commandv('screenshot-to-file', path)
+    notify('saved\n' .. path, 3)
 end
 
 local function start_record()
     rec_path = string.format('%s/microscope-%s.mkv', VIDS, ts())
     local ok, err = pcall(mp.set_property, 'stream-record', rec_path)
     if not ok then
-        mp.osd_message('record failed: ' .. tostring(err), 3)
+        notify('record failed: ' .. tostring(err), 3)
         return
     end
     recording = true
     redraw()
-    mp.osd_message('● recording', 1)
+    notify('recording started\n' .. rec_path, 2)
 end
 
 local function stop_record()
     pcall(mp.set_property, 'stream-record', '')
     recording = false
     redraw()
-    if rec_path then mp.osd_message('saved: ' .. rec_path, 3) end
+    if rec_path then notify('saved\n' .. rec_path, 3) end
 end
 
 local function toggle_record()

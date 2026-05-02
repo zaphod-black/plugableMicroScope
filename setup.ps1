@@ -38,7 +38,10 @@ New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
 $src = Join-Path $ScriptDir 'bin\plugable-microscope.ps1'
 $dst = Join-Path $BinDir    'plugable-microscope.ps1'
 Log "Installing launcher → $dst"
-(Get-Content $src -Raw).Replace('__PMS_REPO_ROOT__', $ScriptDir) | Set-Content -Path $dst -Encoding UTF8
+$rootEscaped = $ScriptDir.Replace("'", "''")
+$prepend = "`$env:PMS_REPO_ROOT = '$rootEscaped'`r`n"
+$content = Get-Content $src -Raw
+Set-Content -Path $dst -Value ($prepend + $content) -Encoding UTF8
 
 # --- Start Menu shortcut so it shows up in app search --------------------
 $StartMenu = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'

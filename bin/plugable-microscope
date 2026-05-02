@@ -13,13 +13,11 @@ set -euo pipefail
 
 VIEWER="${PMS_VIEWER:-mpv}"
 
-# setup.sh rewrites the placeholder below with the install-time absolute path.
-# When this script is run straight from the repo (no install) we fall back to
-# resolving the repo root from our own location.
-PMS_REPO_ROOT="${PMS_REPO_ROOT:-__PMS_REPO_ROOT__}"
-case "$PMS_REPO_ROOT" in
-    __PMS_REPO_ROOT__*) PMS_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)" ;;
-esac
+# setup.sh prepends an `export PMS_REPO_ROOT=/abs/path` line above this one
+# in the installed copy, so the value survives execution from any cwd. When
+# run straight from the repo (no install), we self-resolve from our own path.
+SELF="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")"
+PMS_REPO_ROOT="${PMS_REPO_ROOT:-$(cd "$(dirname "$SELF")/.." 2>/dev/null && pwd)}"
 
 LUA_SCRIPT="${PMS_LUA:-$PMS_REPO_ROOT/share/plugable-microscope.lua}"
 export PMS_CAPTURES="${PMS_CAPTURES:-$PMS_REPO_ROOT/Captures}"

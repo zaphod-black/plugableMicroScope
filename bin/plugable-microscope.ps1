@@ -8,11 +8,13 @@ $ErrorActionPreference = 'Stop'
 
 $Viewer = if ($env:PMS_VIEWER) { $env:PMS_VIEWER } else { 'mpv' }
 
-# setup.ps1 rewrites the placeholder below at install time.
-$RepoRoot = if ($env:PMS_REPO_ROOT) { $env:PMS_REPO_ROOT } else { '__PMS_REPO_ROOT__' }
-if ($RepoRoot -like '__PMS_REPO_ROOT__*') {
-    $RepoRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+# setup.ps1 prepends `$env:PMS_REPO_ROOT = '<abs-path>'` above this line in
+# the installed copy so the value survives launch from any cwd. When run
+# from the repo we self-resolve from our own script path.
+if (-not $env:PMS_REPO_ROOT) {
+    $env:PMS_REPO_ROOT = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 }
+$RepoRoot = $env:PMS_REPO_ROOT
 
 $LuaScript = if ($env:PMS_LUA) { $env:PMS_LUA } else { Join-Path $RepoRoot 'share\plugable-microscope.lua' }
 if (-not $env:PMS_CAPTURES) { $env:PMS_CAPTURES = Join-Path $RepoRoot 'Captures' }
