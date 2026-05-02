@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Plugable Microscope
+GenericName=USB Microscope Viewer
+Comment=Live preview from a Plugable USB digital microscope
+Exec=plugable-microscope
+Icon=camera-web
+Terminal=false
+Categories=AudioVideo;Video;Photography;
+Keywords=microscope;camera;usb;plugable;etron;
+StartupNotify=true

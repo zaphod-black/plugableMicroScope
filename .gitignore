@@ -1,0 +1,25 @@
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Build artefacts
+build/
+dist/
+
+# Captured media — keep folders, ignore contents
+Captures/Pictures/*
+Captures/Videos/*
+!Captures/Pictures/.gitkeep
+!Captures/Videos/.gitkeep
+
+# Local secrets / overrides
+.env
+.env.local
+*.local
