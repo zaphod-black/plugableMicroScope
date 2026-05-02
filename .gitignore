@@ -13,9 +13,11 @@ desktop.ini
 build/
 dist/
 
-# Captured media — keep folders, ignore contents
-Captures/Pictures/*
-Captures/Videos/*
+# Captured media — ignore everything under Captures/, but keep the
+# Pictures/ and Videos/ subdirectories tracked via their .gitkeep files.
+Captures/**
+!Captures/Pictures/
+!Captures/Videos/
 !Captures/Pictures/.gitkeep
 !Captures/Videos/.gitkeep
 
