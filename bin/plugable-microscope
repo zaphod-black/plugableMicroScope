@@ -74,6 +74,7 @@ case "$(uname -s)" in
     Linux)
         require "$VIEWER"
         DEV=$(find_linux_device) || { err "Plugable Microscope not found. Plug it in and try again."; exit 1; }
+        export PMS_INPUT_DEVICE="$DEV"
         exec "$VIEWER" "av://v4l2:$DEV" "${mpv_args[@]}" "$@"
         ;;
     Darwin)

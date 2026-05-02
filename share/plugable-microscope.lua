@@ -117,9 +117,61 @@ local function toggle_record()
     if recording then stop_record() else start_record() end
 end
 
-mp.add_forced_key_binding('SPACE',      'pms-snap',   snap)
-mp.add_forced_key_binding('Ctrl+SPACE', 'pms-record', toggle_record)
-mp.add_forced_key_binding('MBTN_LEFT',  'pms-click',  function()
+-- v4l2-ctl shell-out for autofocus toggle (Linux only).
+local AF_CTRLS = {'focus_automatic_continuous', 'focus_auto'}
+
+local function v4l2_run(args)
+    return mp.command_native({
+        name = 'subprocess',
+        args = args,
+        capture_stdout = true,
+        capture_stderr = true,
+        playback_only = false,
+    })
+end
+
+local function v4l2_get(dev, ctrl)
+    local r = v4l2_run({'v4l2-ctl', '--device=' .. dev, '--get-ctrl=' .. ctrl})
+    if r.status ~= 0 then return nil end
+    return r.stdout:match(':%s*(%-?%d+)')
+end
+
+local function find_af(dev)
+    for _, name in ipairs(AF_CTRLS) do
+        if v4l2_get(dev, name) then return name end
+    end
+    return nil
+end
+
+local function toggle_autofocus()
+    local dev = os.getenv('PMS_INPUT_DEVICE')
+    if not dev then
+        notify('autofocus toggle requires Linux + v4l2-ctl', 2)
+        return
+    end
+    if v4l2_run({'sh', '-c', 'command -v v4l2-ctl'}).status ~= 0 then
+        notify('v4l2-ctl not installed', 2)
+        return
+    end
+    local ctrl = find_af(dev)
+    if not ctrl then
+        notify('autofocus not supported on this device', 2)
+        return
+    end
+    local cur = tonumber(v4l2_get(dev, ctrl)) or 0
+    local new = (cur == 0) and 1 or 0
+    local r = v4l2_run({'v4l2-ctl', '--device=' .. dev, '--set-ctrl=' .. ctrl .. '=' .. new})
+    if r.status == 0 then
+        notify('autofocus ' .. (new == 1 and 'on' or 'off'), 1.5)
+    else
+        notify('failed to set ' .. ctrl, 2)
+    end
+end
+
+mp.add_forced_key_binding('SPACE',      'pms-snap',       snap)
+mp.add_forced_key_binding('Ctrl+SPACE', 'pms-record',     toggle_record)
+mp.add_forced_key_binding('Alt+f',      'pms-autofocus',  toggle_autofocus)
+mp.add_forced_key_binding('MBTN_LEFT',  'pms-click',      function()
     local pos = mp.get_property_native('mouse-pos')
     if not pos then return end
     local x, y, w, h = btn_rect()
